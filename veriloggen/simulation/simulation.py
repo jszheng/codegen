@@ -108,16 +108,19 @@ class Simulator(object):
 
         # encoding: 'utf-8' ?
         encode = sys.getdefaultencoding()
-        
+
+        # code write to tmp file
         code = self._to_code()
-        tmp = tempfile.NamedTemporaryFile()
-        tmp.write(code.encode(encode))
-        tmp.read()
-        filename = tmp.name
-        
+        #tmp = tempfile.NamedTemporaryFile()
+
+        filename = tempfile.mktemp()
+        with open(filename, 'wt') as tmp:
+            tmp.write(code)
+
         cmd.append(filename)
 
         # synthesis
+        print('run cmd:', ' '.join(cmd))
         p = subprocess.Popen(' '.join(cmd), shell=True, stdout=subprocess.PIPE)
         syn_rslt = []
         while True:
@@ -130,7 +133,8 @@ class Simulator(object):
         syn_rslt = ''.join(syn_rslt)
 
         # simulation
-        p = subprocess.Popen('./' + outputfile, shell=True, stdout=subprocess.PIPE)
+        print('run cmd:', 'vvp ./' + outputfile)
+        p = subprocess.Popen('vvp ./' + outputfile, shell=True, stdout=subprocess.PIPE)
         sim_rslt = []
         while True:
             stdout_data = p.stdout.readline()
@@ -141,9 +145,10 @@ class Simulator(object):
         p.stdout.close()
         sim_rslt = ''.join(sim_rslt)
 
-        # close temporal source code file
-        tmp.close()
-        
+        # delete temporal source code file
+        print('remove file', filename)
+        os.unlink(filename)
+
         return ''.join([syn_rslt, sim_rslt])
 
     def _run_modelsim(self, display=False, top="test", include=None, define=None):
