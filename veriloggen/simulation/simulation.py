@@ -8,6 +8,7 @@ import tempfile
 import veriloggen.core.vtypes as vtypes
 import veriloggen.core.module as module
 
+
 def setup_waveform(m, *uuts):
     new_uuts = []
     for u in uuts:
@@ -24,12 +25,14 @@ def setup_waveform(m, *uuts):
     )
     return ret
 
+
 def setup_clock(m, clk, hperiod=5):
     ret = m.Initial(
         clk(0),
         vtypes.Forever(clk(vtypes.Not(clk), ldelay=hperiod))
     )
     return ret
+
 
 def setup_reset(m, reset, *statement, **kwargs):
     period = kwargs['period'] if 'period' in kwargs else 100
@@ -43,13 +46,16 @@ def setup_reset(m, reset, *statement, **kwargs):
     )
     return ret
 
+
 def next_clock(clk):
-    return ( vtypes.Event(vtypes.Posedge(clk)), vtypes.Delay(1) )
+    return (vtypes.Event(vtypes.Posedge(clk)), vtypes.Delay(1))
+
 
 def finish():
-    return Systask('finish')
+    return vtypes.Systask('finish')
 
-#-------------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------------
 class Simulator(object):
     def __init__(self, *objs, **options):
         sim = 'iverilog' if 'sim' not in options else options['sim']
@@ -72,12 +78,12 @@ class Simulator(object):
         if sim == 'vcs':
             raise NotImplementedError("Not implemented: '%s'" % sim)
         raise ValueError("Not supported simulator: '%s'" % sim)
-        
+
     def _type_check_wave(self, wave):
         if wave == 'gtkwave':
-            return 
+            return
         raise ValueError("Not supported waveform viewer: '%s'" % wave)
-        
+
     def run(self, display=False, outputfile='a.out', include=None, define=None):
         if self.sim == 'iverilog' or self.sim == 'icarus':
             return self._run_iverilog(display, outputfile, include, define)
@@ -99,10 +105,10 @@ class Simulator(object):
                     if d[1] is None:
                         cmd.append(d[0])
                     else:
-                        cmd.append(''.join([ d[0], '=', str(d[1])]))
+                        cmd.append(''.join([d[0], '=', str(d[1])]))
                 else:
                     cmd.append(d)
-                    
+
         cmd.append('-o')
         cmd.append(outputfile)
 
@@ -111,7 +117,6 @@ class Simulator(object):
 
         # code write to tmp file
         code = self._to_code()
-        #tmp = tempfile.NamedTemporaryFile()
 
         filename = tempfile.mktemp()
         with open(filename, 'wt') as tmp:
@@ -165,22 +170,22 @@ class Simulator(object):
                     if d[1] is None:
                         cmd.append(d[0])
                     else:
-                        cmd.append(''.join([ d[0], '=', str(d[1])]))
+                        cmd.append(''.join([d[0], '=', str(d[1])]))
                 else:
                     cmd.append(d)
-                    
+
         # encoding: 'utf-8' ?
         encode = sys.getdefaultencoding()
-        
+
         code = self._to_code()
-        tmp = tempfile.NamedTemporaryFile()
-        tmp.write(code.encode(encode))
-        tmp.read()
-        filename = tmp.name
-        
+        filename = tempfile.mktemp()
+        with open(filename, 'wt') as tmp:
+            tmp.write(code)
+
         cmd.append(filename)
 
         # synthesis
+        print('run cmd:', ' '.join(cmd))
         p = subprocess.Popen(' '.join(cmd), shell=True, stdout=subprocess.PIPE)
         syn_rslt = []
         while True:
@@ -193,6 +198,7 @@ class Simulator(object):
         syn_rslt = ''.join(syn_rslt)
 
         # simulation
+        print('run cmd:', 'vsim -c ' + top + ' -do \"run -all\"')
         p = subprocess.Popen('vsim -c ' + top + ' -do \"run -all\"', shell=True, stdout=subprocess.PIPE)
         sim_rslt = []
         while True:
@@ -205,8 +211,9 @@ class Simulator(object):
         sim_rslt = ''.join(sim_rslt)
 
         # close temporal source code file
-        tmp.close()
-        
+        print('remove file', filename)
+        os.unlink(filename)
+
         return ''.join([syn_rslt, sim_rslt])
 
     def _to_code(self):
@@ -219,7 +226,7 @@ class Simulator(object):
                 code.append(obj)
                 code.append('\n')
         return ''.join(code)
-    
+
     def view_waveform(self, filename='uut.vcd', background=False):
         return self._view_waveform_gtkwave(filename, background)
 
@@ -230,4 +237,5 @@ class Simulator(object):
         cmd.append(filename)
         if background:
             cmd.append('&')
+        print('run cmd:', ' '.join(cmd))
         subprocess.call(' '.join(cmd), shell=True)
