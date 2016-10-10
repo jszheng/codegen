@@ -8,7 +8,6 @@ import veriloggen.core.vtypes as vtypes
 from veriloggen.seq.subst_visitor import SubstDstVisitor
 from veriloggen.seq.reset_visitor import ResetVisitor
 
-
 _tmp_count = 0
 
 
@@ -92,7 +91,7 @@ class Seq(vtypes.VeriloggenNode):
         if not nohook:
             self.m.add_hook(self.make_always)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def add(self, *statement, **kwargs):
         """ Adding a new assignment. This method is usually called via __call__(). """
         kwargs.update(self.next_kwargs)
@@ -114,7 +113,7 @@ class Seq(vtypes.VeriloggenNode):
         self._clear_last_if_statement()
         return self._add_statement(statement, **kwargs)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def Prev(self, var, delay, initval=0, cond=None):
         """ returns a value with the specified delay """
         if not isinstance(delay, int):
@@ -156,7 +155,7 @@ class Seq(vtypes.VeriloggenNode):
 
         return p
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def If(self, *cond):
         self._clear_elif_cond()
 
@@ -266,7 +265,7 @@ class Seq(vtypes.VeriloggenNode):
         self._clear_elif_cond()
         return self
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     @property
     def current_delay(self):
         if 'delay' in self.next_kwargs:
@@ -293,7 +292,7 @@ class Seq(vtypes.VeriloggenNode):
     def then(self):
         return self.last_condition
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def update(self, src):
 
         if not isinstance(src, Seq):
@@ -329,10 +328,10 @@ class Seq(vtypes.VeriloggenNode):
         # Invalidated source Seq
         src.done = True
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def make_always(self, reset=(), body=()):
         if self.done:
-            #raise ValueError('make_always() has been already called.')
+            # raise ValueError('make_always() has been already called.')
             return
 
         self.done = True
@@ -354,7 +353,7 @@ class Seq(vtypes.VeriloggenNode):
                     part_body,
                 ))
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def make_code(self):
         ret = []
 
@@ -365,7 +364,7 @@ class Seq(vtypes.VeriloggenNode):
         ret.extend(self.body)
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def make_reset(self):
         ret = []
         for dst in self.dst_var.values():
@@ -374,7 +373,7 @@ class Seq(vtypes.VeriloggenNode):
                 ret.append(v)
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _add_statement(self, statement, keep=None, delay=None, cond=None,
                        lazy_cond=False, eager_val=False, no_delay_cond=False):
 
@@ -424,7 +423,7 @@ class Seq(vtypes.VeriloggenNode):
 
         return self
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _add_dst_var(self, statement):
         for s in statement:
             values = self.dst_visitor.visit(s)
@@ -433,7 +432,7 @@ class Seq(vtypes.VeriloggenNode):
                 if k not in self.dst_var:
                     self.dst_var[k] = v
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _add_delayed_cond(self, statement, delay):
         name_prefix = '_'.join(['', self.name, 'cond', str(self.tmp_count)])
         self.tmp_count += 1
@@ -445,7 +444,7 @@ class Seq(vtypes.VeriloggenNode):
             prev = tmp
         return prev
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _add_delayed_subst(self, subst, delay):
         if not isinstance(subst, vtypes.Subst):
             return subst
@@ -469,7 +468,7 @@ class Seq(vtypes.VeriloggenNode):
             prev = tmp
         return left(prev)
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def _clear_next_kwargs(self):
         self.next_kwargs = {}
 
@@ -491,6 +490,6 @@ class Seq(vtypes.VeriloggenNode):
                 ret = vtypes.Ands(ret, cond)
         return ret
 
-    #-------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     def __call__(self, *statement, **kwargs):
         return self.add(*statement, **kwargs)
