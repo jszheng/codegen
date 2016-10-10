@@ -732,6 +732,10 @@ class Str(_Constant):
 
 # -------------------------------------------------------------------------------
 class _Operator(_Numeric):
+    def __init__(self):
+        _Numeric.__init__(self)
+        self.signed = False
+
     def get_signed(self):
         return self.signed
 
@@ -1414,7 +1418,7 @@ class Cat(_SpecialOperator):
     def _get_module(self):
         for var in self.vars:
             if hasattr(var, '_get_module'):
-                return self.var._get_module()
+                return var._get_module()
         return None
 
     def __str__(self):
@@ -1571,7 +1575,8 @@ class Initial(VeriloggenNode):
 
     def add(self, *statement):
         if self.statement is None:
-            return self.set_statement(*statement)
+            self.statement = tuple(statement)
+            return self.statement
         self.statement = tuple(self.statement + statement)
         return self
 
