@@ -894,6 +894,66 @@ class Instance(vtypes.VeriloggenNode):
                     raise ValueError("No such port '%s' in module '%s'" %
                                      (name, module.name))
 
+    # suppose there are two ways of connecting: position based or name based
+    # name base would be even better with OrderedDict but here sees favor of list of tuple (key, value) pair.from
+    # this implies that it is possible to have multiple setting of the same parameter or port
+    def set_parameter(self, key, value):
+        # check if module has such parameter
+        if key not in self.module.global_constant.keys():
+            raise ValueError("Parameter %s not exist!" % key)
+        new_param = []
+        for param in self.params:
+            if not isinstance(param, (tuple, list)) or len(param) != 2:
+                raise ValueError("Illegal parameter argument")
+            if param[0] == key:
+                pass  # re-define
+            else:
+                new_param.append(param)
+        new_param.append((key, value))
+        self.params = new_param
+
+    def set_port(self, key, value):
+        # check if port name exists
+        if key not in self.module.io_variable.keys():
+            raise ValueError("Port %s not exists!" % key)
+        new_ports = []
+        for port in self.ports:
+            if port[0] == key:
+                pass  # re-define
+            else:
+                new_ports.append(port)
+        new_ports.append((key, value))
+        self.ports = new_ports
+
+    def set_parameters(self, params):
+        if isinstance(params, dict):
+            for k, v in params.items():
+                self.set_parameter(k, v)
+        elif isinstance(params, (tuple, list)) and isinstance(params[0], (tuple, list)):
+            for param in params:
+                if not isinstance(param, (tuple, list)) or len(param) != 2:
+                    raise ValueError("Illegal parameter argument")
+                self.set_parameter(param[0], param[1])
+        else:
+            # must be the 1st time to set the parameter and must be
+            if len(self.params) > 0:
+                raise ValueError("aleady set some parameters before use position set")
+            self.params = [(v.name, p) for v, p in zip(self.module.global_constant.values(), params)]
+
+    def set_ports(self, ports):
+        if isinstance(ports, dict):
+            for k, v in ports.items():
+                self.set_port(k, v)
+        elif isinstance(ports, (tuple, list)) and isinstance(ports[0], (tuple, list)):
+            for port in ports:
+                if not isinstance(port, (tuple, list)) or len(port) != 2:
+                    raise ValueError("Illegal port argument")
+                self.set_port(port[0], port[1])
+        else:
+            if len(self.ports) > 0:
+                raise ValueError("aleady set some ports before use position set")
+            self.ports = [(v.name, p) for v, p in zip(self.module.io_variable.values(), ports)]
+
     def _type_check_module(self, module):
         if not isinstance(module, (Module, StubModule)):
             raise TypeError("module of Instance must be Module or StubModule, not %s" %
