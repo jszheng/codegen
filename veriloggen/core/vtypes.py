@@ -210,6 +210,9 @@ class VeriloggenNode(object):
     def __pos__(self):
         raise TypeError('Not allowed operation.')
 
+    def __invert__(self):
+        raise TypeError('Not allowed operation.')
+
     def __getitem__(self, r):
         raise TypeError('Not allowed operation.')
 
@@ -281,6 +284,9 @@ class _Numeric(VeriloggenNode):
 
     def __pos__(self):
         return Uplus(self)
+
+    def __invert__(self):
+        return Unot(self)
 
     def __getitem__(self, r):
         if isinstance(r, slice):
