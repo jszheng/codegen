@@ -157,12 +157,12 @@ def mk_mem2p(height, width,
 
     if q_pipelined:
         final_d1 = m.RegLike(qb, 'final_data_d1')
-        pipemebq = m.RegLike(pipemeb, 'PIPEMEB_q')
-        seqr(
-            pipemebq(pipemeb)
-        )
 
         if pipeme_pipelined:
+            pipemebq = m.RegLike(pipemeb, 'PIPEMEB_q')
+            seqr(
+                pipemebq(pipemeb)
+            )
             seqr.If(pipemebq)(
                 final_d1(final_data)
             )
