@@ -7,12 +7,12 @@ from veriloggen import *
 from split_to_verilog import *
 
 def mk_{{name}}():
-    name = {{name}}
+    name = '{{name}}'
 
     m = Module(name)
-    m.Input('clk')
-    m.Input('rst')
-    m.Output('dout', width, initval=0)
+    clk = m.Input('clk')
+    rst = m.Input('rst')
+    dout = m.OutputReg('dout', width, initval=0)
 
     return m
 
