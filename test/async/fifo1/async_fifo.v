@@ -22,7 +22,7 @@ module async_fifo (rdata, wfull, rempty, wdata,
 	fifomem #(DSIZE, ASIZE) fifomem
         	(.rdata(rdata), .wdata(wdata),
          	.waddr(waddr), .raddr(raddr),
-         	.wclken(winc), .wclk(wclk));
+         	.wclken(winc & !wfull), .wclk(wclk));
 	rptr_empty #(ASIZE) rptr_empty
            	(.rempty(rempty), .raddr(raddr),
             	.rptr(rptr), .rwptr2(rwptr2),

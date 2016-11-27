@@ -17,21 +17,20 @@ module rptr_empty (rempty, raddr, rptr, rwptr2, rinc, rclk, rrst_n);
     	if (!rrst_n) begin
         	rptr <= 0;
         	raddrmsb <= 0;
-    	end
-    	else begin
+    	end else begin
         	rptr <= rgnext;
         	raddrmsb <= rgnext[ADDRSIZE]^rgnext[ADDRSIZE-1];
     	end
     	
-	always @(rptr or rinc) begin: Gray_inc
-    	integer i;
-    	for (i=0; i<=ADDRSIZE; i=i+1)
+	always @(*) begin: Gray_inc
+    	    integer i;
+    	    for (i=0; i<=ADDRSIZE; i=i+1)
         	rbin[i] = ^(rptr>>i);
-    	if (!rempty)
+    	    if (!rempty)
         	rbnext = rbin + rinc;
-    	else
+    	    else
         	rbnext = rbin;
-    	rgnext = (rbnext>>1) ^ rbnext;
+    	    rgnext = (rbnext>>1) ^ rbnext;
 	end
 	
 	// Memory read-address pointer

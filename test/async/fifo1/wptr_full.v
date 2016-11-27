@@ -21,7 +21,7 @@ module wptr_full (wfull, waddr, wptr, wrptr2, winc, wclk, wrst_n);
         	waddrmsb <= wgnext[ADDRSIZE]^wgnext[ADDRSIZE-1];
     	end
 		
-	always @(wptr or winc) begin: Gray_inc
+	always @(*) begin: Gray_inc
     	integer i;
     	for (i=0; i<=ADDRSIZE; i=i+1)
         	wbin[i] = ^(wptr>>i);
