@@ -1,4 +1,4 @@
-module fifo2 (rdata, wfull, rempty, wdata,
+module async_fifo2 (rdata, wfull, rempty, wdata,
               winc, wclk, wrst_n, rinc, rclk, rrst_n);
 parameter DSIZE = 8;
 parameter ASIZE = 4;
@@ -16,7 +16,7 @@ async_cmp #(ASIZE) async_cmp
 fifomem #(DSIZE, ASIZE) fifomem
         (.rdata(rdata), .wdata(wdata),
          .waddr(wptr), .raddr(rptr),
-         .wclken(winc), .wclk(wclk));
+         .wclken(winc & !wfull), .wclk(wclk));
 rptr_empty #(ASIZE) rptr_empty
            (.rempty(rempty), .rptr(rptr),
             .aempty_n(aempty_n), .rinc(rinc),
