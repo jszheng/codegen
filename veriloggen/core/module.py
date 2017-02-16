@@ -567,9 +567,9 @@ class Module(vtypes.VeriloggenNode):
     # User interface for Verilog code generation
     # ---------------------------------------------------------------------------
     def to_verilog(self, filename=None):
-        import veriloggen.verilog.to_verilog as to_verilog
+        import veriloggen.verilog.to_verilog as tv
         obj = self.to_hook_resolved_obj()
-        return to_verilog.write_verilog(obj, filename)
+        return tv.write_verilog(obj, filename)
 
     def add_hook(self, method, args=None, kwargs=None):
         """ add a hooked method to 'to_verilog()' """
@@ -812,8 +812,8 @@ class StubModule(vtypes.VeriloggenNode):
         return self.code
 
     def to_verilog(self, filename=None):
-        import veriloggen.verilog.to_verilog as to_verilog
-        return to_verilog.write_verilog(self, filename)
+        import veriloggen.verilog.to_verilog as tv
+        return tv.write_verilog(self, filename)
 
     def resolve_hook(self):
         pass

@@ -293,22 +293,32 @@ class _Numeric(VeriloggenNode):
             size = self._len()
 
             right = r.start
+            left = r.stop
+            step = r.step
+
+            if isinstance(left, Int):
+                left = left.value
+            if isinstance(right, Int):
+                right = right.value
+            if isinstance(step, Int):
+                step = step.value
+
             if right is None:
                 right = 0
             elif isinstance(right, int) and right < 0:
                 right = size - abs(right)
 
-            left = r.stop
+
             if left is None:
                 left = size
             elif isinstance(left, int) and left < 0:
                 left = size - abs(left)
-            left -= 1
+                left -= 1
 
             if isinstance(left, int) and left < 0:
                 raise ValueError("Illegal slice index: left = %d" % left)
 
-            step = r.step
+
             if step is None:
                 return Slice(self, left, right)
             else:
@@ -610,18 +620,12 @@ class Int(_Constant):
             if base is not None:
                 self.base = base
             if not isinstance(self.value, int):
-                if self.base is None:
-                    check_int_dec_pure(self.value)
-                elif self.base == 16:
-                    check_int_hex(self.value)
-                elif self.base == 10:
-                    check_int_dec(self.value)
-                elif self.base == 8:
-                    check_int_oct(self.value)
-                elif self.base == 2:
-                    check_int_bin(self.value)
-                else:
-                    raise ValueError("Illegal base number %d for Int." % self.base)
+                if   self.base is None: check_int_dec_pure(self.value)
+                elif self.base == 16: check_int_hex(self.value)
+                elif self.base == 10: check_int_dec(self.value)
+                elif self.base ==  8: check_int_oct(self.value)
+                elif self.base ==  2: check_int_bin(self.value)
+                else: raise ValueError("Illegal base number %d for Int." % self.base)
             self.width = str_to_width(value) if width is None else width
             self.signed = str_to_signed(value) if signed == False else signed
 
@@ -1581,8 +1585,7 @@ class Initial(VeriloggenNode):
 
     def add(self, *statement):
         if self.statement is None:
-            self.statement = tuple(statement)
-            return self.statement
+            return self.set_statement(*statement)
         self.statement = tuple(self.statement + statement)
         return self
 
@@ -1754,6 +1757,49 @@ class When(VeriloggenNode):
             return self.set_statement(*args)
         raise ValueError("Statement body is already assigned.")
 
+#-------------------------------------------------------------------------------
+def PatternIf(*patterns):
+    root = None
+    prev = None
+    length = len(patterns)
+
+    if len(patterns) == 1 and isinstance(patterns, (tuple, list)):
+        patterns = patterns[0]
+
+    for i, (cond, stmt) in enumerate(patterns):
+        if not isinstance(stmt, (tuple, list)):
+            stmt = tuple([stmt])
+
+        body = If(cond)(stmt) if cond is not None else stmt
+
+        if root is None:
+            root = body
+        else:
+            prev.Else(body)
+
+        prev = body
+
+        if cond is None:
+            if i < length - 1:
+                raise ValueError("Too many patterns after None condition.")
+            break
+
+    return root
+
+def PatternMux(*patterns):
+    prev = None
+
+    if len(patterns) == 1 and isinstance(patterns, (tuple, list)):
+        patterns = patterns[0]
+
+    for i, (cond, stmt) in enumerate(reversed(patterns)):
+        if prev is None and cond is not None:
+            raise ValueError('Last pattern requires a None condition.')
+        if prev is not None and cond is None:
+            raise ValueError('Non-last pattern requires a condition.')
+        prev = Mux(cond, stmt, prev) if cond is not None else stmt
+
+    return prev
 
 # -------------------------------------------------------------------------------
 class ScopeIndex(VeriloggenNode):

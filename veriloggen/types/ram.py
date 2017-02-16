@@ -9,7 +9,7 @@ from veriloggen.dataflow.dtypes import make_condition
 from . import util
 
 
-class BramInterface(object):
+class RAMInterface(object):
     _I = 'Reg'
     _O = 'Wire'
 
@@ -48,25 +48,24 @@ class BramInterface(object):
         util.connect_port(self.wenable, targ.wenable)
 
 
-class BramSlaveInterface(BramInterface):
+class RAMSlaveInterface(RAMInterface):
     _I = 'Input'
     _O = 'Output'
 
 
-class BramMasterInterface(BramInterface):
+class RAMMasterInterface(RAMInterface):
     _I = 'Output'
     _O = 'Input'
 
 
-#-------------------------------------------------------------------------
-def mkBramDefinition(name, datawidth=32, addrwidth=10, numports=2):
+def mkRAMDefinition(name, datawidth=32, addrwidth=10, numports=2, sync=True):
     m = Module(name)
     clk = m.Input('CLK')
 
     interfaces = []
 
     for i in range(numports):
-        interface = BramSlaveInterface(
+        interface = RAMSlaveInterface(
             m, name + '_%d' % i, datawidth, addrwidth)
         interface.delay_addr = m.Reg(name + '_%d_daddr' % i, addrwidth)
         interfaces.append(interface)
@@ -80,13 +79,59 @@ def mkBramDefinition(name, datawidth=32, addrwidth=10, numports=2):
             ),
             interface.delay_addr(interface.addr)
         )
-        m.Assign(interface.rdata(mem[interface.delay_addr]))
+        if sync:
+            m.Assign(interface.rdata(mem[interface.delay_addr]))
+        else:
+            m.Assign(interface.rdata(mem[interface.addr]))
 
     return m
 
 
+class _RAM(object):
+
+    def __init__(self, m, name, clk,
+                 datawidth=32, addrwidth=10, numports=1, sync=True):
+
+        self.m = m
+        self.name = name
+        self.clk = clk
+
+        self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth,
+                                        itype='Wire', otype='Wire')
+                           for i in range(numports)]
+
+        ram_def = mkRAMDefinition(name, datawidth, addrwidth, numports, sync)
+
+        self.m.Instance(ram_def, name,
+                        params=(), ports=m.connect_ports(ram_def))
+
+    def connect(self, port, addr, wdata, wenable):
+        self.m.Assign(self.interfaces[port].addr(addr))
+        self.m.Assign(self.interfaces[port].wdata(wdata))
+        self.m.Assign(self.interfaces[port].wenable(wenable))
+
+    def rdata(self, port):
+        return self.interfaces[port].rdata
+
+
+class SyncRAM(_RAM):
+
+    def __init__(self, m, name, clk,
+                 datawidth=32, addrwidth=10, numports=1):
+        _RAM.__init__(self, m, name, clk,
+                      datawidth, addrwidth, numports, sync=True)
+
+
+class AsyncRAM(_RAM):
+
+    def __init__(self, m, name, clk,
+                 datawidth=32, addrwidth=10, numports=1):
+        _RAM.__init__(self, m, name, clk,
+                      datawidth, addrwidth, numports, sync=False)
+
+
 #-------------------------------------------------------------------------
-class Bram(object):
+class SyncRAMManager (object):
 
     def __init__(self, m, name, clk, rst, datawidth=32, addrwidth=10, numports=1,
                  nodataflow=False):
@@ -97,10 +142,10 @@ class Bram(object):
         self.rst = rst
         self.datawidth = datawidth
         self.addrwidth = addrwidth
-        self.interfaces = [BramInterface(m, name + '_%d' % i, datawidth, addrwidth)
+        self.interfaces = [RAMInterface(m, name + '_%d' % i, datawidth, addrwidth)
                            for i in range(numports)]
 
-        self.definition = mkBramDefinition(
+        self.definition = mkRAMDefinition(
             name, datawidth, addrwidth, numports)
         self.inst = self.m.Instance(self.definition, 'inst_' + name,
                                     ports=m.connect_ports(self.definition))
