@@ -1,0 +1,8 @@
+module mydesing
+    input clk
+    input rstn
+
+    master axi m0_axi
+    slave ahb s0_ahb
+
+    instance comp1
